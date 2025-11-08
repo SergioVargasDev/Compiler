@@ -1,5 +1,6 @@
 from patito_parser import parser
 from patito_lexer import lexer
+from symbol_table import function_directory  # Importar el directorio
 
 def run_test(test_name, code):
     print(f"\n{'='*50}")
@@ -9,6 +10,12 @@ def run_test(test_name, code):
     print(f"\nResultado:")
     
     try:
+        # 🔥 RESETEAR el directorio de funciones entre tests
+        function_directory.functions = {}
+        function_directory.current_function = 'global'
+        function_directory.global_scope.variables = {}
+        function_directory.add_function('global', 'nula', [])
+        
         result = parser.parse(code, lexer=lexer)
         if result:
             print("✓ Análisis completado exitosamente")
@@ -19,7 +26,7 @@ def run_test(test_name, code):
         print(f"✗ Error: {e}")
         return False
 
-# Casos de prueba
+# Casos de prueba (se mantienen igual)
 test_cases = [
     ("Programa básico con variables", """
 programa HolaMundo;
