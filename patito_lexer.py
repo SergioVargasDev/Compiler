@@ -31,19 +31,17 @@ reserved = {
     'nula': 'NULA'
 }
 
-# CORREGIDO: Ignorar espacios y tabs - debe ser una variable, NO una función
 t_ignore = ' \t'
 
-# IMPORTANTE: Los tokens más específicos primero
 def t_IGUAL(t):
     r'=='
     return t
 
-def t_MAYOR_IGUAL(t):  # AGREGADO
+def t_MAYOR_IGUAL(t):
     r'>='
     return t
 
-def t_MENOR_IGUAL(t):  # AGREGADO
+def t_MENOR_IGUAL(t):  
     r'<='
     return t
 
@@ -55,7 +53,6 @@ def t_ASIGNACION(t):
     r'='
     return t
 
-# Expresiones regulares simples
 t_DOSPUNTOS = r':'
 t_COMA = r','
 t_PUNTOCOMA = r';'
@@ -75,7 +72,6 @@ def t_ID(t):
     t.type = reserved.get(t.value, 'ID')
     return t
 
-# Flotante antes que entero
 def t_CTE_FLOAT(t):
     r'\d+\.\d+'
     t.value = float(t.value)

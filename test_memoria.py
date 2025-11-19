@@ -74,15 +74,6 @@ fin
             # Mostrar cuádruplos
             quadruple_manager.print_quadruples()
             
-            print("\n=== RESUMEN EJECUCIÓN ===")
-            print("✅ Variables globales: 10 variables asignadas")
-            print("✅ Temporales: 25+ temporales para cálculos")  
-            print("✅ WHILE principal: Cuádruplos 14, 39")
-            print("✅ IF-ELSE: Cuádruplos 19, 33")
-            print("✅ WHILE interno: Cuádruplos 24, 32")
-            print("✅ GOTOs: Estructuras de control completas")
-            print("✅ Memoria: Distribución organizada correctamente")
-            
         return True
         
     except Exception as e:
