@@ -10,7 +10,6 @@ def run_test(test_name, code):
     print(f"\nResultado:")
     
     try:
-        # 🔥 RESETEAR el directorio de funciones entre tests
         function_directory.functions = {}
         function_directory.current_function = 'global'
         function_directory.global_scope.variables = {}
@@ -26,7 +25,7 @@ def run_test(test_name, code):
         print(f"✗ Error: {e}")
         return False
 
-# Casos de prueba (se mantienen igual)
+# Casos de prueba
 test_cases = [
     ("Programa básico con variables", """
 programa HolaMundo;

@@ -1,17 +1,27 @@
+# symbol_table.py
+from memory_manager import memory_manager
+
 class VariableTable:
     def __init__(self, parent_scope=None):
         self.variables = {}
         self.parent_scope = parent_scope
     
-    def add_variable(self, name, var_type, address=None):
+    def add_variable(self, name, var_type, scope='global'):
         if name in self.variables:
             raise Exception(f"Variable '{name}' ya declarada en este ámbito")
         
+        # Obtener dirección virtual
+        if scope == 'global':
+            address = memory_manager.get_global_address(var_type)
+        else:
+            address = memory_manager.get_local_address(var_type)
+        
         self.variables[name] = {
             'type': var_type,
-            'address': address
+            'address': address,
+            'scope': scope
         }
-        return True
+        return address
     
     def get_variable(self, name):
         if name in self.variables:
@@ -59,8 +69,9 @@ class FunctionDirectory:
             raise Exception(f"Función '{func_name}' no encontrada")
         
         func_info = self.functions[func_name]
-        func_info['local_scope'].add_variable(param_name, param_type)
-        func_info['parameters'].append({'name': param_name, 'type': param_type})
+        # Agregar parámetro con dirección local
+        address = func_info['local_scope'].add_variable(param_name, param_type, 'local')
+        func_info['parameters'].append({'name': param_name, 'type': param_type, 'address': address})
     
     def validate_call(self, func_name, arguments):
         if not self.function_exists(func_name):

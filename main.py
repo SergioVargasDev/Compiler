@@ -1,5 +1,6 @@
 from patito_parser import parser
 from patito_lexer import lexer
+from quadruples import quadruple_manager
 import sys
 
 def main():
@@ -15,6 +16,9 @@ def main():
         data = sys.stdin.read()
 
     try:
+        # Limpiar cuádruplos anteriores
+        quadruple_manager.clear()
+        
         result = parser.parse(data, lexer=lexer)
         if result:
             print("✓ Análisis exitoso")

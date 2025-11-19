@@ -1,21 +1,22 @@
 import ply.yacc as yacc
 from patito_lexer import tokens, lexer
-
-# Importar las estructuras semánticas
 from semantic_cube import semantic_cube
 from symbol_table import function_directory
+from quadruples import quadruple_manager
 
+# PRECEDENCIA CORREGIDA
 precedence = (
     ('left', 'MAS', 'MENOS'),
     ('left', 'MULT', 'DIV'),
-    ('nonassoc', 'MENOR', 'MAYOR', 'IGUAL', 'DIFERENTE'),
+    ('nonassoc', 'MENOR', 'MAYOR', 'IGUAL', 'DIFERENTE', 'MAYOR_IGUAL', 'MENOR_IGUAL'),
 )
 
 def p_programa(p):
     'programa : PROGRAMA ID PUNTOCOMA vars funcs INICIO cuerpo FIN'
-    # Punto neurálgico: Programa principal
     p[0] = ('programa', p[2], p[4], p[5], p[7])
     print("✓ Programa válido - Análisis semántico completado")
+    quadruple_manager.complete_patching()
+    quadruple_manager.print_quadruples()
 
 def p_vars(p):
     '''vars : VARS declaraciones
@@ -32,11 +33,9 @@ def p_declaraciones(p):
 
 def p_declaracion(p):
     'declaracion : lista_ids DOSPUNTOS tipo PUNTOCOMA'
-    # Punto neurálgico: Declaración de variables
     var_type = p[3]
     for var_name in p[1]:
         try:
-            # Agregar variable al ámbito actual
             current_scope = function_directory.get_current_scope()
             current_scope.add_variable(var_name, var_type)
             print(f"✓ Variable declarada: {var_name} : {var_type}")
@@ -69,29 +68,21 @@ def p_funcs(p):
 
 def p_func(p):
     'func : func_tipo ID PARIZQ params PARDER LLAVEIZQ vars cuerpo LLAVEDER'
-    # Punto neurálgico: Declaración de función
     return_type = p[1]
     func_name = p[2]
     parameters = p[4]
     
     try:
-        # Agregar función al directorio
         function_directory.add_function(func_name, return_type, [])
-        
-        # Establecer como función actual y agregar parámetros
         function_directory.set_current_function(func_name)
         for param_name, param_type in parameters:
             function_directory.add_parameter(func_name, param_name, param_type)
-        
         print(f"✓ Función declarada: {func_name} -> {return_type}")
-        
     except Exception as e:
         print(f"✗ Error semántico: {e}")
         raise
     
     p[0] = ('func', p[1], p[2], p[4], p[7], p[8])
-    
-    # Regresar al ámbito global después de procesar la función
     function_directory.set_current_function('global')
 
 def p_func_tipo(p):
@@ -114,8 +105,7 @@ def p_param_list(p):
 
 def p_param(p):
     'param : ID DOSPUNTOS tipo'
-    # Punto neurálgico: Parámetro de función
-    p[0] = (p[1], p[3])  # (nombre, tipo)
+    p[0] = (p[1], p[3])
 
 def p_cuerpo(p):
     '''cuerpo : LLAVEIZQ estatutos LLAVEDER
@@ -142,53 +132,79 @@ def p_estatuto(p):
 
 def p_asigna(p):
     'asigna : ID ASIGNACION expresion PUNTOCOMA'
-    # Punto neurálgico: Asignación
+    # Punto neurálgico: Generar cuádruplo de asignación
     var_name = p[1]
-    expr_result = p[3]  # Puede ser tipo o tupla
     
-    # Obtener el tipo de la expresión
-    if isinstance(expr_result, tuple) and len(expr_result) > 1:
-        # Es una operación, obtener el último elemento que es el tipo
-        expr_type = expr_result[-1] if isinstance(expr_result[-1], str) else 'entero'
-    else:
-        # Es un tipo simple
-        expr_type = expr_result
+    # Obtener el resultado de la expresión (último temporal generado)
+    if quadruple_manager.operands_stack:
+        result_operand = quadruple_manager.operands_stack.pop()
+        # Generar cuádruplo de asignación
+        quadruple_manager.add_quadruple('=', result_operand, '', var_name)
     
-    # Verificar que la variable existe
     current_scope = function_directory.get_current_scope()
     var_info = current_scope.get_variable(var_name)
     
     if var_info is None:
         raise Exception(f"Variable '{var_name}' no declarada")
     
-    # Verificar compatibilidad de tipos usando el cubo semántico
-    if not semantic_cube.is_operation_valid(var_info['type'], expr_type, '='):
-        raise Exception(f"Tipos incompatibles en asignación: {var_info['type']} = {expr_type}")
-    
     p[0] = ('asigna', p[1], p[3])
 
 def p_condicion(p):
     'condicion : SI PARIZQ expresion PARDER cuerpo sino PUNTOCOMA'
+    # Punto neurálgico: Cuádruplos para condicional
+    # Después de procesar el cuerpo del if, generar GOTO al final
+    end_quad = quadruple_manager.add_quadruple('goto', '', '', '')
+    
+    # Si hay sino, parchear el gotof al inicio del sino
+    if p[6]:  # Hay bloque sino
+        sino_quad = quadruple_manager.next_quad()
+        quadruple_manager.patch(quadruple_manager.pop_jump(), sino_quad)
+    else:
+        # No hay sino, parchear gotof al final del if
+        false_jump = quadruple_manager.pop_jump()
+        if false_jump is not None:
+            quadruple_manager.patch(false_jump, quadruple_manager.next_quad())
+    
+    # Parchear el GOTO final
+    quadruple_manager.patch(end_quad, quadruple_manager.next_quad())
+    
     p[0] = ('condicion', p[3], p[5], p[6])
 
 def p_sino(p):
     '''sino : SINO cuerpo
             | empty'''
-    p[0] = p[2] if len(p) > 2 else None
+    if len(p) > 2:
+        # Hay bloque sino, empujar GOTO al final
+        end_quad = quadruple_manager.add_quadruple('goto', '', '', '')
+        quadruple_manager.push_jump(end_quad)
+        p[0] = p[2]
+    else:
+        p[0] = None
 
 def p_ciclo(p):
     'ciclo : MIENTRAS PARIZQ expresion PARDER HAZ cuerpo PUNTOCOMA'
+    # Punto neurálgico: Cuádruplos para ciclo con GOTOs
+    # Al final del cuerpo del ciclo, generar GOTO al inicio
+    return_quad = quadruple_manager.add_quadruple('goto', '', '', '')
+    
+    # Parchear el GOTO de retorno al inicio del ciclo
+    start_quad = quadruple_manager.pop_jump()
+    if start_quad is not None:
+        quadruple_manager.patch(return_quad, start_quad)
+    
+    # Parchear el gotof (si la condición es falsa) al final
+    false_jump = quadruple_manager.pop_jump()
+    if false_jump is not None:
+        quadruple_manager.patch(false_jump, quadruple_manager.next_quad())
+    
     p[0] = ('ciclo', p[3], p[6])
 
 def p_llamada(p):
     'llamada : ID PARIZQ argumentos PARDER'
-    # Punto neurálgico: Llamada a función
     func_name = p[1]
-    arguments = p[3]  # Lista de tipos de argumentos
+    arguments = p[3]
     
-    # Validar que la función existe y los argumentos son correctos
     try:
-        # Extraer tipos de los argumentos
         arg_types = []
         for arg in arguments:
             if isinstance(arg, tuple) and len(arg) > 1:
@@ -199,7 +215,7 @@ def p_llamada(p):
         
         function_directory.validate_call(func_name, arg_types)
         func_info = function_directory.get_function(func_name)
-        p[0] = ('llamada', p[1], p[3], func_info['return_type'])  # Incluir tipo de retorno
+        p[0] = ('llamada', p[1], p[3], func_info['return_type'])
     except Exception as e:
         print(f"✗ Error en llamada a función: {e}")
         raise
@@ -219,6 +235,18 @@ def p_expresion_lista(p):
 
 def p_imprime(p):
     'imprime : ESCRIBE PARIZQ imprime_lista PARDER'
+    # Generar cuádruplos PRINT para cada elemento
+    for elemento in p[3]:
+        if elemento == 'expresion_aritmetica' or elemento == 'expresion_relacional':
+            # Es una expresión - usar el último temporal de la pila
+            if quadruple_manager.operands_stack:
+                value_addr = quadruple_manager.operands_stack.pop()
+                # Obtener el nombre legible para el print
+                value_name = quadruple_manager.address_to_name.get(value_addr, f"temp_{value_addr}")
+                quadruple_manager.add_quadruple('print', value_name, '', '')
+        elif isinstance(elemento, str) and not elemento.startswith('expresion'):
+            # Es un letrero literal
+            quadruple_manager.add_quadruple('print', f'"{elemento}"', '', '')
     p[0] = ('imprime', p[3])
 
 def p_imprime_lista(p):
@@ -239,86 +267,78 @@ def p_expresion(p):
                  | exp MENOR exp
                  | exp MAYOR exp
                  | exp IGUAL exp
-                 | exp DIFERENTE exp'''
+                 | exp DIFERENTE exp
+                 | exp MAYOR_IGUAL exp
+                 | exp MENOR_IGUAL exp'''
+    
     if len(p) == 2:
-        p[0] = p[1]  # Tipo de la expresión simple
+        p[0] = p[1]  # Expresión simple
     else:
-        # Punto neurálgico: Operación relacional
-        left_result = p[1]
-        right_result = p[3]
+        # Expresión relacional - generar cuádruplo
         operator = p[2]
+        quadruple_manager.push_operator(operator)
+        quadruple_manager.generate_quadruple()
         
-        # Obtener tipos de los operandos
-        left_type = left_result if isinstance(left_result, str) else 'entero'
-        right_type = right_result if isinstance(right_result, str) else 'entero'
+        # Para estructuras de control, generar GOTOF
+        if len(p) == 4:  # Es una expresión relacional completa
+            # Guardar el resultado de la expresión relacional
+            if quadruple_manager.operands_stack:
+                condition_result = quadruple_manager.operands_stack.pop()
+                # Generar GOTOF (goto if false)
+                gotof_quad = quadruple_manager.add_quadruple('gotof', condition_result, '', '')
+                quadruple_manager.push_jump(gotof_quad)
+                
+                # Si estamos en un contexto de ciclo, guardar también la posición de inicio
+                # Esto se maneja en la regla del ciclo específicamente
         
-        # Validar tipos usando cubo semántico
-        if not semantic_cube.is_operation_valid(left_type, right_type, operator):
-            raise Exception(f"Tipos incompatibles en operación {operator}: {left_type} y {right_type}")
-        
-        result_type = semantic_cube.get_result_type(left_type, right_type, operator)
-        p[0] = ('op_relacional', p[2], p[1], p[3], result_type)
+        p[0] = 'expresion_relacional'
 
 def p_exp(p):
     '''exp : termino
            | exp MAS termino
            | exp MENOS termino'''
     if len(p) == 2:
-        p[0] = p[1]  # Tipo del término
+        p[0] = p[1]
     else:
-        # Punto neurálgico: Operación aritmética
-        left_result = p[1]
-        right_result = p[3]
+        # Operaciones aritméticas
         operator = p[2]
-        
-        # Obtener tipos de los operandos
-        left_type = left_result if isinstance(left_result, str) else 'entero'
-        right_type = right_result if isinstance(right_result, str) else 'entero'
-        
-        # Validar tipos usando cubo semántico
-        if not semantic_cube.is_operation_valid(left_type, right_type, operator):
-            raise Exception(f"Tipos incompatibles en operación {operator}: {left_type} y {right_type}")
-        
-        result_type = semantic_cube.get_result_type(left_type, right_type, operator)
-        p[0] = ('op_aritmetica', p[2], p[1], p[3], result_type)
+        quadruple_manager.push_operator(operator)
+        quadruple_manager.generate_quadruple()
+        p[0] = 'expresion_aritmetica'
 
 def p_termino(p):
     '''termino : factor
                | termino MULT factor
                | termino DIV factor'''
     if len(p) == 2:
-        p[0] = p[1]  # Tipo del factor
+        p[0] = p[1]
     else:
-        # Punto neurálgico: Operación aritmética
-        left_result = p[1]
-        right_result = p[3]
+        # Operaciones aritméticas
         operator = p[2]
-        
-        # Obtener tipos de los operandos
-        left_type = left_result if isinstance(left_result, str) else 'entero'
-        right_type = right_result if isinstance(right_result, str) else 'entero'
-        
-        # Validar tipos usando cubo semántico
-        if not semantic_cube.is_operation_valid(left_type, right_type, operator):
-            raise Exception(f"Tipos incompatibles en operación {operator}: {left_type} y {right_type}")
-        
-        result_type = semantic_cube.get_result_type(left_type, right_type, operator)
-        p[0] = ('op_aritmetica', p[2], p[1], p[3], result_type)
+        quadruple_manager.push_operator(operator)
+        quadruple_manager.generate_quadruple()
+        p[0] = 'termino_aritmetico'
 
 def p_factor(p):
     '''factor : CTE_ENT
               | CTE_FLOAT
               | ID
-              | PARIZQ expresion PARDER
-              | llamada
-              | MENOS factor'''
+              | PARIZQ expresion PARDER'''
+    
     if len(p) == 2:
+        # Caso simple: constante o variable
         if isinstance(p[1], int):
-            p[0] = 'entero'  # Tipo de constante entera
+            # Constante entera
+            constant_value = str(p[1])
+            quadruple_manager.push_operand(constant_value, 'entero')
+            p[0] = 'constante_entera'
         elif isinstance(p[1], float):
-            p[0] = 'flotante'  # Tipo de constante flotante
-        elif isinstance(p[1], str) and p[1] not in ['entero', 'flotante']:
-            # Es un ID - verificar que existe y obtener su tipo
+            # Constante flotante
+            constant_value = str(p[1])
+            quadruple_manager.push_operand(constant_value, 'flotante')
+            p[0] = 'constante_flotante'
+        else:
+            # ID de variable
             var_name = p[1]
             current_scope = function_directory.get_current_scope()
             var_info = current_scope.get_variable(var_name)
@@ -326,18 +346,11 @@ def p_factor(p):
             if var_info is None:
                 raise Exception(f"Variable '{var_name}' no declarada")
             
-            p[0] = var_info['type']
-        else:
-            p[0] = p[1]  # Para llamadas a función (ya incluye el tipo)
-    elif len(p) == 3:
-        # Factor negativo - mantener el mismo tipo
-        factor_result = p[2]
-        if isinstance(factor_result, str):
-            p[0] = factor_result
-        else:
-            p[0] = 'entero'  # Por defecto
+            quadruple_manager.push_operand(var_name, var_info['type'])
+            p[0] = 'variable'
     else:
-        p[0] = p[2]  # Tipo de la expresión entre paréntesis
+        # Expresión entre paréntesis: (expresion)
+        p[0] = p[2]
 
 def p_empty(p):
     'empty :'
@@ -345,7 +358,7 @@ def p_empty(p):
 
 def p_error(p):
     if p:
-        print(f"Error de sintaxis en '{p.value}' (línea {p.lineno})")
+        print(f"Error de sintaxis en '{p.value}' (tipo: {p.type}, línea {p.lineno})")
     else:
         print("Error de sintaxis: fin de archivo inesperado")
 

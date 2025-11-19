@@ -12,28 +12,8 @@ tokens = (
     'LLAVEIZQ', 'LLAVEDER', 'PARIZQ', 'PARDER',
     'MAS', 'MENOS', 'MULT', 'DIV',
     'MENOR', 'MAYOR', 'DIFERENTE', 'IGUAL',
-    'ASIGNACION'
+    'ASIGNACION', 'MAYOR_IGUAL', 'MENOR_IGUAL'  
 )
-
-# Expresiones regulares simples
-t_DOSPUNTOS = r':'
-t_COMA = r','
-t_PUNTOCOMA = r';'
-t_LLAVEIZQ = r'\{'
-t_LLAVEDER = r'\}'
-t_PARIZQ = r'\('
-t_PARDER = r'\)'
-t_MAS = r'\+'
-t_MENOS = r'-'
-t_MULT = r'\*'
-t_DIV = r'/'
-t_MENOR = r'<'
-t_MAYOR = r'>'
-t_DIFERENTE = r'!='
-t_IGUAL = r'=='
-t_ASIGNACION = r'='
-
-t_ignore = ' \t'
 
 # Palabras reservadas
 reserved = {
@@ -50,6 +30,45 @@ reserved = {
     'sino': 'SINO',
     'nula': 'NULA'
 }
+
+# CORREGIDO: Ignorar espacios y tabs - debe ser una variable, NO una función
+t_ignore = ' \t'
+
+# IMPORTANTE: Los tokens más específicos primero
+def t_IGUAL(t):
+    r'=='
+    return t
+
+def t_MAYOR_IGUAL(t):  # AGREGADO
+    r'>='
+    return t
+
+def t_MENOR_IGUAL(t):  # AGREGADO
+    r'<='
+    return t
+
+def t_DIFERENTE(t):
+    r'!='
+    return t
+
+def t_ASIGNACION(t):
+    r'='
+    return t
+
+# Expresiones regulares simples
+t_DOSPUNTOS = r':'
+t_COMA = r','
+t_PUNTOCOMA = r';'
+t_LLAVEIZQ = r'\{'
+t_LLAVEDER = r'\}'
+t_PARIZQ = r'\('
+t_PARDER = r'\)'
+t_MAS = r'\+'
+t_MENOS = r'-'
+t_MULT = r'\*'
+t_DIV = r'/'
+t_MENOR = r'<'
+t_MAYOR = r'>'
 
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
