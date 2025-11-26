@@ -41,13 +41,26 @@ class FunctionDirectory:
         if name in self.functions:
             raise Exception(f"Función '{name}' ya declarada")
         
-        local_scope = VariableTable(self.global_scope)
+        if name == 'global':
+            local_scope = self.global_scope
+        else:
+            local_scope = VariableTable(self.global_scope)
         
         self.functions[name] = {
             'return_type': return_type,
             'parameters': parameters,
-            'local_scope': local_scope
+            'local_scope': local_scope,
+            'start_quad': None
         }
+        
+        # Si la función tiene tipo de retorno, agregar variable global con el mismo nombre
+        if return_type != 'nula':
+            try:
+                self.global_scope.add_variable(name, return_type, 'global')
+            except:
+                # Si ya existe (ej. recursión o declaración previa), ignorar
+                pass
+                
         return True
     
     def get_function(self, name):
@@ -72,6 +85,11 @@ class FunctionDirectory:
         # Agregar parámetro con dirección local
         address = func_info['local_scope'].add_variable(param_name, param_type, 'local')
         func_info['parameters'].append({'name': param_name, 'type': param_type, 'address': address})
+    
+    def set_start_quad(self, func_name, quad_index):
+        if func_name not in self.functions:
+            raise Exception(f"Función '{func_name}' no encontrada")
+        self.functions[func_name]['start_quad'] = quad_index
     
     def validate_call(self, func_name, arguments):
         if not self.function_exists(func_name):

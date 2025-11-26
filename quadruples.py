@@ -27,6 +27,9 @@ class QuadrupleManager:
         self.address_table = {}
         # Tabla inversa para debugging
         self.address_to_name = {}
+        
+        # Variable dedicada para GOTO main
+        self.goto_main_index = None
 
     def next_quad(self):
         """Devuelve el número del siguiente cuádruplo"""
@@ -92,6 +95,11 @@ class QuadrupleManager:
             self.operands_stack.append(address)
             self.types_stack.append(type_)
     
+    def push_address(self, address, type_):
+        """Agrega una dirección ya resuelta a las pilas"""
+        self.operands_stack.append(address)
+        self.types_stack.append(type_)
+
     def push_operator(self, operator):
         """Agrega un operador a la pila"""
         self.operators_stack.append(operator)
@@ -138,6 +146,29 @@ class QuadrupleManager:
         quadruple = Quadruple(operator, left_operand, right_operand, result)
         self.quadruples.append(quadruple)
         return len(self.quadruples) - 1  # Retorna el índice del cuádruplo
+
+    def add_era(self, func_name):
+        """Genera cuádruplo ERA"""
+        self.add_quadruple('ERA', func_name, '', '')
+
+    def add_param(self, argument_address, destination_address):
+        """Genera cuádruplo PARAM"""
+        # argument_address: dirección del valor a pasar
+        # destination_address: dirección del parámetro en la función destino
+        self.add_quadruple('PARAM', argument_address, '', destination_address)
+
+    def add_gosub(self, func_name, start_quad):
+        """Genera cuádruplo GOSUB"""
+        self.add_quadruple('GOSUB', func_name, '', start_quad)
+
+    def add_endfunc(self):
+        """Genera cuádruplo ENDFUNC"""
+        self.add_quadruple('ENDFUNC', '', '', '')
+    
+    def add_return(self, value_address):
+        """Genera cuádruplo RET"""
+        self.add_quadruple('RET', value_address, '', '')
+
     
     def patch(self, quad_index, new_result):
         """Parchea un cuádruplo con un nuevo resultado"""
@@ -192,6 +223,7 @@ class QuadrupleManager:
         self.temp_counter = 0
         self.address_table.clear()
         self.address_to_name.clear()
+        self.goto_main_index = None
 
 # Instancia global del manejador de cuádruplos
 quadruple_manager = QuadrupleManager()

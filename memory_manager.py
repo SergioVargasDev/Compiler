@@ -76,6 +76,24 @@ class MemoryManager:
         else:
             raise ValueError(f"Tipo {temp_type} no soportado en memoria temporal")
     
+    def reset(self):
+        """Reinicia los contadores de memoria"""
+        self.global_int_counter = self.GLOBAL_INT_START
+        self.global_float_counter = self.GLOBAL_FLOAT_START
+        
+        self.local_int_counter = self.LOCAL_INT_START
+        self.local_float_counter = self.LOCAL_FLOAT_START
+        
+        self.temp_int_counter = self.TEMP_INT_START
+        self.temp_float_counter = self.TEMP_FLOAT_START
+        self.temp_bool_counter = self.TEMP_BOOL_START
+        
+        self.const_int_counter = self.CONST_INT_START
+        self.const_float_counter = self.CONST_FLOAT_START
+        self.const_string_counter = self.CONST_STRING_START
+        
+        self.constants_table.clear()
+    
     def get_constant_address(self, value, const_type):
         """Obtiene dirección para constante (int, float, string)"""
         key = f"{value}_{const_type}"
