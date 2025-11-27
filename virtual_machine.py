@@ -88,10 +88,15 @@ class VirtualMachine:
         self.call_stack = [] # To store return IPs
         self.pending_stack = [] # Stack of pending activation records for nested calls
 
-    def run(self):
+    def run(self, debug=False):
         # print("=== INICIANDO EJECUCIÓN VM ===")
         while self.instruction_pointer < len(self.quadruples):
             quad = self.quadruples[self.instruction_pointer]
+            
+            if debug:
+                print(f"[VM-STEP] IP={self.instruction_pointer} | {quad}")
+                # Opcional: Imprimir memoria relevante si se desea
+            
             op = quad.operator
             left = quad.left_operand
             right = quad.right_operand

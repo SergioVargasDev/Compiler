@@ -1,6 +1,5 @@
 class MemoryManager:
     def __init__(self):
-        # Rangos de direcciones virtuales
         self.GLOBAL_INT_START = 1000
         self.GLOBAL_FLOAT_START = 2000
         
@@ -15,7 +14,6 @@ class MemoryManager:
         self.CONST_FLOAT_START = 9000
         self.CONST_STRING_START = 10000  
         
-        # Contadores actuales
         self.global_int_counter = self.GLOBAL_INT_START
         self.global_float_counter = self.GLOBAL_FLOAT_START
         
@@ -30,7 +28,6 @@ class MemoryManager:
         self.const_float_counter = self.CONST_FLOAT_START
         self.const_string_counter = self.CONST_STRING_START
         
-        # Tabla de constantes
         self.constants_table = {}
     
     def get_global_address(self, var_type):
