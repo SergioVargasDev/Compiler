@@ -1,0 +1,24 @@
+programa Factorial;
+vars
+    n, res : entero;
+
+entero factorial(num : entero) {
+    vars
+        acum : entero;
+        i : entero;
+    {
+        acum = 1;
+        i = 1;
+        mientras (i < num) haz {
+            i = i + 1;
+            acum = acum * i;
+        };
+        factorial = acum;
+    }
+}
+
+inicio
+    n = 5;
+    res = factorial(n);
+    escribe("El factorial de 5 es:", res);
+fin

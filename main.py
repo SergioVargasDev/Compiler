@@ -1,7 +1,9 @@
+import sys
 from patito_parser import parser
 from patito_lexer import lexer
 from quadruples import quadruple_manager
-import sys
+from memory_manager import memory_manager
+from virtual_machine import VirtualMachine
 
 def main():
     if len(sys.argv) > 1:
@@ -16,13 +18,19 @@ def main():
         data = sys.stdin.read()
 
     try:
-        # Limpiar cuádruplos anteriores
+        # Limpiar estados
         quadruple_manager.clear()
+        memory_manager.reset()
         
+        print("1. Compilando...")
         result = parser.parse(data, lexer=lexer)
-        if result:
-            print("✓ Análisis exitoso")
-            print("AST:", result)
+        
+        print("\n2. Ejecutando...")
+        vm = VirtualMachine(quadruple_manager.quadruples, memory_manager.constants_table)
+        vm.run()
+        
+    except Exception as e:
+        print(f"✗ Error: {e}")
     except Exception as e:
         print(f"✗ Error: {e}")
 

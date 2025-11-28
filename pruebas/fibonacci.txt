@@ -1,0 +1,21 @@
+programa Fibonacci;
+vars
+    n, res : entero;
+
+entero fib(num : entero) {
+    vars
+        aux : entero;
+    {
+        si (num < 2) {
+            fib = num;
+        } sino {
+            fib = fib(num - 1) + fib(num - 2);
+        };
+    }
+}
+
+inicio
+    n = 6;
+    res = fib(n);
+    escribe("Fibonacci de 6 es:", res);
+fin

@@ -150,6 +150,32 @@ class VirtualMachine:
                 right_val = self.memory.get_value(right)
                 self.memory.set_value(res, left_val > right_val)
                 self.instruction_pointer += 1
+
+            elif op == '==':
+                left_val = self.memory.get_value(left)
+                right_val = self.memory.get_value(right)
+                self.memory.set_value(res, left_val == right_val)
+                self.instruction_pointer += 1
+
+            elif op == '!=':
+                left_val = self.memory.get_value(left)
+                right_val = self.memory.get_value(right)
+                self.memory.set_value(res, left_val != right_val)
+                self.instruction_pointer += 1
+
+            elif op == '<=':
+                left_val = self.memory.get_value(left)
+                right_val = self.memory.get_value(right)
+                self.memory.set_value(res, left_val <= right_val)
+                self.instruction_pointer += 1
+
+            elif op == '>=':
+                left_val = self.memory.get_value(left)
+                right_val = self.memory.get_value(right)
+                self.memory.set_value(res, left_val >= right_val)
+                self.instruction_pointer += 1
+                self.memory.set_value(res, left_val > right_val)
+                self.instruction_pointer += 1
                 
             elif op == 'print':
                 if isinstance(left, str) and left.startswith('"'):
