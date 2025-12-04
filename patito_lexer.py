@@ -1,13 +1,9 @@
 import ply.lex as lex
 
-# Lista de tokens
 tokens = (
-    # Palabras reservadas
     'PROGRAMA', 'INICIO', 'FIN', 'VARS', 'ENTERO', 'FLOTANTE',
     'MIENTRAS', 'ESCRIBE', 'HAZ', 'SI', 'SINO', 'NULA',
-    # Identificadores y constantes
     'ID', 'CTE_ENT', 'CTE_FLOAT', 'LETRERO',
-    # Símbolos
     'DOSPUNTOS', 'COMA', 'PUNTOCOMA',
     'LLAVEIZQ', 'LLAVEDER', 'PARIZQ', 'PARDER',
     'MAS', 'MENOS', 'MULT', 'DIV',
@@ -15,7 +11,7 @@ tokens = (
     'ASIGNACION', 'MAYOR_IGUAL', 'MENOR_IGUAL'  
 )
 
-# Palabras reservadas
+
 reserved = {
     'programa': 'PROGRAMA',
     'inicio': 'INICIO',
@@ -30,8 +26,6 @@ reserved = {
     'sino': 'SINO',
     'nula': 'NULA'
 }
-
-t_ignore = ' \t'
 
 def t_IGUAL(t):
     r'=='
@@ -52,20 +46,6 @@ def t_DIFERENTE(t):
 def t_ASIGNACION(t):
     r'='
     return t
-
-t_DOSPUNTOS = r':'
-t_COMA = r','
-t_PUNTOCOMA = r';'
-t_LLAVEIZQ = r'\{'
-t_LLAVEDER = r'\}'
-t_PARIZQ = r'\('
-t_PARDER = r'\)'
-t_MAS = r'\+'
-t_MENOS = r'-'
-t_MULT = r'\*'
-t_DIV = r'/'
-t_MENOR = r'<'
-t_MAYOR = r'>'
 
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -99,16 +79,65 @@ def t_error(t):
     print(f"Carácter ilegal '{t.value[0]}' en línea {t.lineno}")
     t.lexer.skip(1)
 
+t_ignore = ' \t'
+t_DOSPUNTOS = r':'
+t_COMA = r','
+t_PUNTOCOMA = r';'
+t_LLAVEIZQ = r'\{'
+t_LLAVEDER = r'\}'
+t_PARIZQ = r'\('
+t_PARDER = r'\)'
+t_MAS = r'\+'
+t_MENOS = r'-'
+t_MULT = r'\*'
+t_DIV = r'/'
+t_MENOR = r'<'
+t_MAYOR = r'>'
+
 lexer = lex.lex()
 
 def test_lexer(data):
     print("=== ANÁLISIS LÉXICO ===")
+    
     lexer.input(data)
+    
     tokens_list = []
+    
     while True:
         tok = lexer.token()
+        
         if not tok:
             break
         tokens_list.append((tok.type, tok.value, tok.lineno))
         print(f"Línea {tok.lineno}: {tok.type} -> {tok.value}")
+    print("\n")
+    print(lexer.lexre)
+    print("\n")
+    print(tokens_list)
     return tokens_list
+
+if __name__ == "__main__":
+    codigo_prueba = '''
+   programa Fibonacci;
+    vars
+        n, res : entero;
+
+    entero fib(num : entero) {
+        vars
+            aux : entero;
+        {
+            si (num < 2) {
+                fib = num;
+            } sino {
+                fib = fib(num - 1) + fib(num - 2);
+            };
+        }
+    }
+
+    inicio
+        n = 6;
+        res = fib(n);
+        escribe("Fibonacci de 6 es:", res);
+    fin
+    '''
+    test_lexer(codigo_prueba)

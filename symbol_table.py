@@ -1,4 +1,3 @@
-# symbol_table.py
 from memory_manager import memory_manager
 
 class VariableTable:
@@ -10,7 +9,6 @@ class VariableTable:
         if name in self.variables:
             raise Exception(f"Variable '{name}' ya declarada en este ámbito")
         
-        # Obtener dirección virtual
         if scope == 'global':
             address = memory_manager.get_global_address(var_type)
         else:
@@ -53,12 +51,10 @@ class FunctionDirectory:
             'start_quad': None
         }
         
-        # Si la función tiene tipo de retorno, agregar variable global con el mismo nombre
         if return_type != 'nula':
             try:
                 self.global_scope.add_variable(name, return_type, 'global')
             except:
-                # Si ya existe (ej. recursión o declaración previa), ignorar
                 pass
                 
         return True
@@ -74,9 +70,15 @@ class FunctionDirectory:
             raise Exception(f"Función '{name}' no declarada")
         self.current_function = name
     
-    def get_current_scope(self):
-        return self.functions[self.current_function]['local_scope']
+    def get_current_scope_info(self):
+        current_func = self.current_function
+        scope = self.functions[current_func]['local_scope']
+        scope_type = 'global' if current_func == 'global' else 'local'
+        return scope, scope_type   
     
+    def get_current_scope(self):
+        return self.functions[self.current_function]['local_scope']   
+         
     def add_parameter(self, func_name, param_name, param_type):
         if func_name not in self.functions:
             raise Exception(f"Función '{func_name}' no encontrada")
@@ -105,4 +107,18 @@ class FunctionDirectory:
             if arg_type != param['type']:
                 raise Exception(f"Tipo incorrecto en argumento {i+1} de '{func_name}'. Esperado: {param['type']}, Obtenido: {arg_type}")
 
+    def print_directory(self):
+        print("\n=== DIRECTORIO DE FUNCIONES ===")
+        for name, info in self.functions.items():
+            print(f"Función: {name} | Return: {info['return_type']} | Start Quad: {info['start_quad']}")
+            print("  Variables:")
+            for var_name, var_info in info['local_scope'].variables.items():
+                print(f"    {var_name}: {var_info['type']} (Addr: {var_info['address']})")
+            if info['parameters']:
+                print("  Parámetros:")
+                for param in info['parameters']:
+                    print(f"    {param['name']}: {param['type']} (Addr: {param['address']})")
+            print("-" * 30)
+
 function_directory = FunctionDirectory()
+
