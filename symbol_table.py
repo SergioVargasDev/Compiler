@@ -106,7 +106,7 @@ class FunctionDirectory:
         for i, (arg_type, param) in enumerate(zip(arguments, params)):
             if arg_type != param['type']:
                 raise Exception(f"Tipo incorrecto en argumento {i+1} de '{func_name}'. Esperado: {param['type']}, Obtenido: {arg_type}")
-
+ 
     def print_directory(self):
         print("\n=== DIRECTORIO DE FUNCIONES ===")
         for name, info in self.functions.items():

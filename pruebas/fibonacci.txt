@@ -15,7 +15,7 @@ entero fib(num : entero) {
 }
 
 inicio
-    n = 6;
+    n = 30;
     res = fib(n);
-    escribe("Fibonacci de 6 es:", res);
+    escribe("Fibonacci de 20 es:", res);
 fin

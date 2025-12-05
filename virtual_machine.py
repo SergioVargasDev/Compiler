@@ -91,8 +91,6 @@ class VirtualMachine:
             right = quad.right_operand
             res = quad.result
             
-           
-            
             if op == '=':
                 value = self.memory.get_value(left)
                 if value is None: print(f"WARNING: Get value {left} returned None")

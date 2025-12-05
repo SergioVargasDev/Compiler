@@ -5,12 +5,11 @@ tokens = (
     'MIENTRAS', 'ESCRIBE', 'HAZ', 'SI', 'SINO', 'NULA',
     'ID', 'CTE_ENT', 'CTE_FLOAT', 'LETRERO',
     'DOSPUNTOS', 'COMA', 'PUNTOCOMA',
-    'LLAVEIZQ', 'LLAVEDER', 'PARIZQ', 'PARDER',
+    'LLAVEIZQ', 'LLAVEDER', 'PARIZQ', 'PARDER','CORCHETEIZQ', 'CORCHETEDER',
     'MAS', 'MENOS', 'MULT', 'DIV',
     'MENOR', 'MAYOR', 'DIFERENTE', 'IGUAL',
     'ASIGNACION', 'MAYOR_IGUAL', 'MENOR_IGUAL'  
 )
-
 
 reserved = {
     'programa': 'PROGRAMA',
@@ -96,6 +95,15 @@ t_MAYOR = r'>'
 
 lexer = lex.lex()
 
+"""
+LexToken(
+    type   = 'ID',       # ¿Qué soy? (La categoría para la gramática)
+    value  = 'patito',   # ¿Qué valgo? (El texto exacto que escribió el usuario)
+    lineno = 1,          # ¿Dónde estoy? (Para reportar errores)
+    lexpos = 0           # Posición exacta del caracter (índice)
+)
+"""
+
 def test_lexer(data):
     print("=== ANÁLISIS LÉXICO ===")
     
@@ -135,7 +143,7 @@ if __name__ == "__main__":
     }
 
     inicio
-        n = 6;
+        n = 20;
         res = fib(n);
         escribe("Fibonacci de 6 es:", res);
     fin

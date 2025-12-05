@@ -6,45 +6,64 @@ from quadruples import quadruple_manager
 from memory_manager import memory_manager
 
 precedence = (
+    ('nonassoc', 'MENOR', 'MAYOR', 'IGUAL', 'DIFERENTE', 'MAYOR_IGUAL', 'MENOR_IGUAL'),
     ('left', 'MAS', 'MENOS'),
     ('left', 'MULT', 'DIV'),
-    ('nonassoc', 'MENOR', 'MAYOR', 'IGUAL', 'DIFERENTE', 'MAYOR_IGUAL', 'MENOR_IGUAL'),
 )
 
+# Regla principal del programa
 def p_programa(p):
+    # Regla principal del programa
     'programa : PROGRAMA ID PUNTOCOMA start_goto vars funcs fill_goto_main INICIO start_main cuerpo FIN'
     print("\n✓ COMPILACIÓN EXITOSA - Programa válido")
+    # Completa los saltos pendientes
     quadruple_manager.complete_patching()
 
+# Regla neurálgica para iniciar el salto al main
+def p_start_goto(p):
+    #La palabra empty le dice al parser que no espere ningún token
+    'start_goto : empty'
+    # Si el siguiente cuadruplo es el cuadruplo 0, significa que no hay cuadruplos anteriores
+    if quadruple_manager.next_quad() == 0:
+        # Agrega un cuadruplo goto al final
+        goto_main = quadruple_manager.add_quadruple('goto', '', '', '')
+        # Guarda el índice del cuadruplo goto
+        quadruple_manager.goto_main_index = goto_main
+
+# Regla para completar el salto al main
+def p_fill_goto_main(p):
+    'fill_goto_main : empty'
+    pass
+
+# Regla para iniciar la función main
 def p_start_main(p):
     'start_main : empty'
     if quadruple_manager.goto_main_index is not None:
         quadruple_manager.patch(quadruple_manager.goto_main_index, quadruple_manager.next_quad())
 
-def p_start_goto(p):
-    'start_goto : empty'
-    if quadruple_manager.next_quad() == 0:
-        goto_main = quadruple_manager.add_quadruple('goto', '', '', '')
-        quadruple_manager.goto_main_index = goto_main
-
-def p_fill_goto_main(p):
-    'fill_goto_main : empty'
-    pass
-
-
+# Regla para declaraciones
 def p_vars(p):
+    # El parser busca que haya variables declaradas, si no serán omitidas gracias al |empty|
     '''vars : VARS declaraciones
             | empty'''
-            
+
+# Regla para declaraciones
 def p_declaraciones(p):
     '''declaraciones : declaracion declaraciones
                      | declaracion'''
+    """
+    a : entero;
+    b : flotante;  <-- El parser vuelve a llamar a 'declaracion'
+    c : entero;    <-- Y otra vez
+    |
+     a : entero;
+    """
 
 def p_declaracion(p):
     'declaracion : lista_ids DOSPUNTOS tipo PUNTOCOMA'
     var_type = p[3]
     var_names = p[1]
-    
+
     for var_name in var_names:
         try:
             current_scope, scope_type = function_directory.get_current_scope_info()
@@ -58,9 +77,16 @@ def p_declaracion(p):
 def p_lista_ids(p):
     '''lista_ids : ID
                  | ID COMA lista_ids'''
+    
+    # lista_ids : ID
+    # p tiene índices [0, 1]. Longitud = 2
     if len(p) == 2:
         p[0] = [p[1]]
+        
+    # lista_ids : ID COMA lista_ids
+    # p tiene índices [0, 1, 2, 3]. Longitud = 4
     else:
+        # Ignoramos p[2] (la coma)
         p[0] = [p[1]] + p[3]
 
 def p_tipo(p):
@@ -92,7 +118,6 @@ def p_func_header(p):
         start_quad = quadruple_manager.next_quad()
         function_directory.set_start_quad(func_name, start_quad)
         
-        # Registrar parámetros SOLO en Symbol Table
         for param_name, param_type in parameters:
             function_directory.add_parameter(func_name, param_name, param_type)
             
